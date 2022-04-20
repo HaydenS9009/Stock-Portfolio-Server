@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Portfolio</title>
+  <style>
+    table, th, td {
+      border: 1px solid black;
+      border-collapse: collapse;
+      padding: 5px;
+      font-size: 1.3em;
+    }
+    #portfolio {
+      width:100%;
+    }
+  </style>
+</head>
+<body>
+
+<table id="portfolio"></table>
+
+<form action="http://localhost:8080/portfolio/update" method="POST" autocomplete="off">
+  <table>
+    <tr>
+      <td>Stock Symbol</td>
+      <td>
+        <input id="sSymbol" name="sSymbol" list="sSymbolOpt">
+      </td>
+    </tr>
+    <br>
+    <tr>
+      <td>Quantity</td>
+      <td>
+        <input type="text" id = "Quantity" name="Quantity">
+      </td>
+    </tr>
+    <br>
+    <tr>
+      <td>Price</td>
+      <td>
+        <input type="text" id="Price" name="Price">
+      </td>
+    </tr>
+  </table>
+  <input type="submit" value="Update">
+</form>
+<datalist id="sSymbolOpt"></datalist>
+
+<script>
+  //Load xml file, call table function to fill the stock table
+  var xml = new XMLHttpRequest();
+  xml.onreadystatechange = function () {
+    if (this.readyState == 4 && this.status == 200) {
+      table(this);
+    }
+  };
+  xml.open("GET", "portfolio.xml", true);
+  xml.send();
+
+
+  //Create stock table using data from xml file
+  function table(xml) {
+    var table = "";
+    var xml2 = xml.responseXML;
+    var stocks = xml2.getElementsByTagName("Stock");
+
+    //Add labels to the stock table
+    table += "<tr><th>Stock</th><th>Quantity</th><th>Price</th><th>Gain/Loss</th></tr>";
+
+    //Fill cells of the table - calculate what is necessary
+    for (i = 0; i < stocks.length; i++) {
+      name = stocks[i].getElementsByTagName("Name")[0].childNodes[0].nodeValue
+      quantity = stocks[i].getElementsByTagName("Quantity")[0].childNodes[0].nodeValue
+      price = stocks[i].getElementsByTagName("Price")[0].childNodes[0].nodeValue
+
+      //Call stockPrice() function to work out the gain/loss of the stock
+      stockPrice(i, name, quantity, price)
+
+      //Add new stock and its information to the stock table
+      table += "<tr><td>" + name + "</td><td>" + quantity + "</td><td>" + "$" + price + "</td><td id='stock" + i + "'></td></tr>";
+    }
+    //Update stock table with the new html table
+    document.getElementById("portfolio").innerHTML = table
+  }
+
+  //Work out gain/loss
+  function stockPrice(num, name, quantity, price) {
+    var http = new XMLHttpRequest();
+    http.onreadystatechange = function () {
+      if (this.readyState == 4 && this.status == 200) {
+      //Find current price for the stock
+        var ticker = this.responseText
+        var position = ticker.search("latestPrice")
+        var position2 = ticker.search("latestSource")
+        ticker = ticker.slice(position+13, position2-2)
+
+        //Work out gain/loss based on stock price and the amount paid for it
+        document.getElementById("stock" + num).innerHTML = (ticker - price)/price*100 + "%"
+      }
+    }
+    http.open("GET", "https://sandbox.iexapis.com/stable/stock/" + name + "/quote?token=Tpk_c5cb125948e641ddb0d93d07147cffc4", true);
+    http.send();
+  }
+
+  //Create list of options for stock ticker entry
+  inputs()
+  function inputs() {
+    var symbols = new XMLHttpRequest();
+    symbols.onreadystatechange = function () {
+
+      if (this.readyState == 4 && this.status == 200) {
+        var list = this.responseText
+        list = JSON.parse(list)
+        var enterList = document.getElementById("sSymbolOpt");
+        for (var i in list) {
+          option = document.createElement("option")
+          enterList.appendChild(option)
+          option.value = list[i].symbol
+        }
+      }
+    }
+    symbols.open("GET", "https://sandbox.iexapis.com/stable/ref-data/iex/symbols?token=Tpk_c5cb125948e641ddb0d93d07147cffc4", true)
+    symbols.send()
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Research</title>
+  <style>
+    td {
+      font-size: 1.3em;
+    }
+  </style>
+</head>
+<body>
+  <input id="sSymbol" name="sSymbol" list="sSymbolOpt" onkeyup="data()" style="text-transform:uppercase">
+  <table>
+    <tr>
+      <td>Symbol: </td>
+      <td id="symbol"></td>
+    </tr>
+    <tr>
+      <td>Company Name: </td>
+      <td id="cName"></td>
+    </tr>
+    <tr>
+      <td>PE ratio: </td>
+      <td id="pe"></td>
+    </tr>
+    <tr>
+      <td>Market Capitalization: </td>
+      <td id="mCap"></td>
+    </tr>
+    <tr>
+      <td>52 week high: </td>
+      <td id="52h"></td>
+    </tr>
+    <tr>
+      <td>52 week low: </td>
+      <td id="52l"></td>
+    </tr>
+  </table>
+
+  <script src="https://canvasjs.com/assets/script/jquery-1.11.1.min.js"></script>
+  <script src="https://canvasjs.com/assets/script/canvasjs.stock.min.js"></script>
+  <div id="chartContainer" style="height: 500px; width: 100%;"></div>
+
+
+<datalist id="sSymbolOpt"></datalist>
+
+<script>
+  //Get list of stocks for search list
+  inputs()
+  function inputs() {
+    var symbols = new XMLHttpRequest();
+    symbols.onreadystatechange = function () {
+
+      if (this.readyState == 4 && this.status == 200) {
+        var list = this.responseText
+        list = JSON.parse(list)
+        var enterList = document.getElementById("sSymbolOpt");
+        tempList = []
+        for (var i in list) {
+          option = document.createElement("option")
+          enterList.appendChild(option)
+          option.value = list[i].symbol
+          tempList.push(list[i].symbol)
+        }
+      }
+    }
+    symbols.open("GET", "https://sandbox.iexapis.com/stable/ref-data/iex/symbols?token=Tpk_c5cb125948e641ddb0d93d07147cffc4", true)
+    symbols.send()
+  }
+
+//Get data for stock attributes, and call function to create the chart
+  function data() {
+    entry = document.getElementById("sSymbol").value
+
+    var data = new XMLHttpRequest();
+    data.onreadystatechange = function () {
+      if (this.readyState == 4 && this.status == 200) {
+        //info = this.responseText
+        info = JSON.parse(this.responseText)
+
+        document.getElementById("symbol").innerHTML = entry.toUpperCase()
+        document.getElementById("cName").innerHTML = info.companyName
+        document.getElementById("pe").innerHTML = info.peRatio
+        document.getElementById("mCap").innerHTML = info.marketcap
+        document.getElementById("52h").innerHTML = info.week52high
+        document.getElementById("52l").innerHTML = info.week52low
+
+        chart(entry)
+      }
+    };
+    data.open("GET", "https://sandbox.iexapis.com/stable/stock/" + entry +"/stats?token=Tpk_c5cb125948e641ddb0d93d07147cffc4", true);
+    data.send();
+
+//Get data through http for the stock
+  function chart(entry) {
+      var closing = new XMLHttpRequest();
+      closing.onreadystatechange = function () {
+          if (this.readyState == 4 && this.status == 200) {
+              chart = JSON.parse(this.responseText);
+              //Create list of filtered data
+              datapoints = [];
+              for (var x = 0; x < chart.length; x++) {
+                  var obj = chart[x]
+                  date = obj.date
+                  close = obj.close
+                  datapoints.push({x:new Date(date),y:Number(close)})
+              }
+              //Create graph with filtered data
+              var chartGraph = new CanvasJS.StockChart("chartContainer", {
+                  charts: [{
+                      data: [{type: "line", dataPoints: datapoints}]
+                  }]
+              });
+              chartGraph.render();
+          }
+      }
+      closing.open("GET", "https://sandbox.iexapis.com/stable/stock/" + entry + "/chart/5y?chartCloseOnly=true&token=Tpk_c5cb125948e641ddb0d93d07147cffc4", true);
+      closing.send();
+    }
+  }
+
+
+</script>
+
+
+
+
+
+</body>
+</html>
+
+
+
