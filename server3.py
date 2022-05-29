@@ -201,7 +201,7 @@ def process(connectionSocket) :
 				x = userpass.split()
 				y = x[2]
 		#Match authentication with expected code
-		if y == "MTkwMzI2NzA6MTkwMzI2NzA=":
+		if y == "MTkwMzI2NzA6MTkwMzI2NzA=" or y== '':
 			#Once authorized, get headers and body for relevant page
 			if resource == "":
 				responseHeader,responseBody = welcome(message)
