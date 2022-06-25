@@ -1,3 +1,5 @@
+Assignment 1 for 159.352 "Advanced Web Devlopement"
+
 For this assignment we were given a basic python server, and had to create a stock portfolio web application. The basic python server here (server3.py) is extended 
 well beyond the original file. Anything not related to the basic function of handling connections of a python server was written by me (Hayden Stimpson).
 
